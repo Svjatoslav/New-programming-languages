@@ -1,0 +1,43 @@
+use std::thread;
+
+fn parallel_sort(mut nums: Vec<i32>) -> Vec<i32> {
+    if nums.len() <= 1 {
+        return nums;
+    }
+
+    let mid = nums.len() / 2;
+    let (left_half, right_half) = nums.split_at_mut(mid);
+
+    let left_half = left_half.to_vec();
+    let right_half = right_half.to_vec();
+
+    let left_handle = thread::spawn(move || parallel_sort(left_half));
+    let right_handle = thread::spawn(move || parallel_sort(right_half));
+
+    let mut left_sorted = left_handle.join().unwrap();
+    let mut right_sorted = right_handle.join().unwrap();
+
+    let mut sorted = Vec::with_capacity(nums.len());
+    while !left_sorted.is_empty() && !right_sorted.is_empty() {
+        if left_sorted[0] < right_sorted[0] {
+            sorted.push(left_sorted.remove(0));
+        } else {
+            sorted.push(right_sorted.remove(0));
+        }
+    }
+
+    if !left_sorted.is_empty() {
+        sorted.append(&mut left_sorted);
+    }
+    if !right_sorted.is_empty() {
+        sorted.append(&mut right_sorted);
+    }
+
+    sorted
+}
+
+fn main() {
+    let nums = vec![5, 2, 1, 3, 6, 4];
+    let sorted_nums = parallel_sort(nums);
+    println!("{:?}", sorted_nums);
+}
